@@ -163,6 +163,45 @@ namespace Assembler
 
                 // C INSTRUCTION
 
+                string comp = "0000000";
+                string dest = "000";
+                string jump = "000";
+
+                if (command.Contains('='))
+                {
+                    string[] parts = command.Split('=');
+                    if (!_dest.ContainsKey(parts[0])) return GenerateError(index);
+                    dest = _dest[parts[0]];
+
+                    if (parts[1].Contains(';'))
+                    {
+                        string[] subParts = parts[1].Split(';');
+                        if (!_comp.ContainsKey(subParts[0])) return GenerateError(index);
+                        if (!_jump.ContainsKey(subParts[1])) return GenerateError(index);
+                        comp = _comp[subParts[0]];
+                        jump = _comp[subParts[1]];
+                    }
+                    else
+                    {
+                        if (!_comp.ContainsKey(parts[1])) return GenerateError(index);
+                        comp = _comp[parts[1]];
+                    }
+                }
+                else if(command.Contains(';'))
+                {
+                    string[] parts = command.Split(';');
+                    if (!_comp.ContainsKey(parts[0])) return GenerateError(index);
+                    if (!_jump.ContainsKey(parts[1])) return GenerateError(index);
+                    comp = _comp[parts[0]];
+                    jump = _comp[parts[1]];
+                }
+                else
+                {
+                    if (!_comp.ContainsKey(command)) return GenerateError(index);
+                    comp = _comp[command];
+                }
+
+                output.Add($"111{comp}{dest}{jump}");
             }
 
             return output.ToArray();
