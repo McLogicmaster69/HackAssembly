@@ -25,6 +25,7 @@ namespace Assembler
             foreach (string s in output)
             {
                 combined += s;
+                combined += "\n";
             }
             outputTxt.Text = combined;
         }

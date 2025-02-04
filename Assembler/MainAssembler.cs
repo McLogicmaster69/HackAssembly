@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Assembler
 {
@@ -121,26 +118,39 @@ namespace Assembler
             List<string> output = new List<string>();
             Dictionary<string, int> labels = InitLabels();
             int index = -1;
+            List<string> commands = new List<string>(input);
 
-            foreach (string line in input)
+            int i = 0;
+            while (i < commands.Count)
             {
-                index++;
-
                 // PREPARE COMMAND
-                string command = line.Trim().Replace(" ", "").ToUpper();
-                if (command == "") continue;
+                string command = commands[i].Trim().Replace(" ", "").ToUpper();
+                if (command == "")
+                {
+                    commands.RemoveAt(i);
+                    continue;
+                }
 
                 // LABELS
                 if (command[0] == '(')
                 {
-                    if (command.Length <= 2) return GenerateError(index);
-                    if (command[command.Length - 1] != ')') return GenerateError(index);
+                    if (command.Length <= 2) return GenerateError(i);
+                    if (command[command.Length - 1] != ')') return GenerateError(i);
                     string label = command.Substring(1, command.Length - 2);
-                    if (labels.ContainsKey(label)) return GenerateError(index);
-                    if (int.TryParse(label, out int _)) return GenerateError(index);
-                    labels.Add(label, output.Count);
+                    if (labels.ContainsKey(label)) return GenerateError(i);
+                    if (int.TryParse(label, out int _)) return GenerateError(i);
+                    labels.Add(label, i);
+                    commands.RemoveAt(i);
                     continue;
                 }
+
+                commands[i] = command;
+                i++;
+            }
+
+            foreach (string command in commands)
+            {
+                index++;
 
                 // A INSTRUCTION
                 if (command[0] == '@')
@@ -179,7 +189,7 @@ namespace Assembler
                         if (!_comp.ContainsKey(subParts[0])) return GenerateError(index);
                         if (!_jump.ContainsKey(subParts[1])) return GenerateError(index);
                         comp = _comp[subParts[0]];
-                        jump = _comp[subParts[1]];
+                        jump = _jump[subParts[1]];
                     }
                     else
                     {
@@ -193,7 +203,7 @@ namespace Assembler
                     if (!_comp.ContainsKey(parts[0])) return GenerateError(index);
                     if (!_jump.ContainsKey(parts[1])) return GenerateError(index);
                     comp = _comp[parts[0]];
-                    jump = _comp[parts[1]];
+                    jump = _jump[parts[1]];
                 }
                 else
                 {
