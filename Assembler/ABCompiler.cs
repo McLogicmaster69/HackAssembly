@@ -10,6 +10,7 @@ namespace Assembler
     {
         private static bool _initialised = false;
         private static Dictionary<string, KeywordCommand> _keywords;
+        private static List<string> _operators;
 
         private static string[] EmptyOutput => new string[0];
 
@@ -24,6 +25,13 @@ namespace Assembler
         {
             _keywords = new Dictionary<string, KeywordCommand>();
             _keywords.Add("dec", Declare);
+        }
+
+        private static void InitOperators()
+        {
+            _operators = new List<string>();
+            _operators.Add("+");
+            _operators.Add("-");
         }
 
         public static string[] Compile(string[] input)
@@ -97,16 +105,98 @@ namespace Assembler
                 return EmptyOutput;
             }
 
-            if (elements.Length > 3)
+            if (elements.Length == 4  || elements.Length > 5)
             {
                 error = ErrorType.TooManyArguements;
                 return EmptyOutput;
             }
 
-            if (!int.TryParse(elements[2], out int result))
+            string[] evaluation;
+
+            if (elements.Length == 3)
             {
-                error = ErrorType.InvalidAssignment;
+                evaluation = EvaluateExpression(elements[2], state, out ErrorType evalError);
+                if (evalError != ErrorType.None)
+                {
+                    error = evalError;
+                    return EmptyOutput;
+                }
+            }
+            else
+            {
+                evaluation = EvaluateExpression(elements[2], elements[3], elements[4], state, out ErrorType evalError);
+                if (evalError != ErrorType.None)
+                {
+                    error = evalError;
+                    return EmptyOutput;
+                }
+            }
+
+            List<string> output = new List<string>(evaluation);
+            string memoryAddress = $"@{state.VariableMemoryAddress(elements[0])}";
+            output.Add(memoryAddress);
+            output.Add("M=D");
+            error = ErrorType.None;
+            return output.ToArray();
+        }
+
+        private static string[] EvaluateExpression(string p1, string op, string p2, ABCompileState state, out ErrorType error)
+        {
+            List<string> output = new List<string>();
+
+            string[] p1Output = EvaluateExpression(p1, state, out ErrorType p1Error);
+            if (p1Error != ErrorType.None)
+            {
+                error = p1Error;
                 return EmptyOutput;
+            }
+            output.AddRange(p1Output);
+            output.Add("@R0");
+            output.Add("M=D");
+
+            string[] p2Output = EvaluateExpression(p2, state, out ErrorType p2Error);
+            if (p2Error != ErrorType.None)
+            {
+                error = p2Error;
+                return EmptyOutput;
+            }
+            output.AddRange(p2Output);
+
+            switch (op)
+            {
+                case "+":
+                    output.Add("@R0");
+                    output.Add("D=M+D");
+                    break;
+                case "-":
+                    output.Add("@R0");
+                    output.Add("D=M-D");
+                    break;
+                default:
+                    error = ErrorType.UnknownOperator;
+                    return EmptyOutput;
+            }
+
+            error = ErrorType.None;
+            return output.ToArray();
+        }
+
+        private static string[] EvaluateExpression(string p, ABCompileState state, out ErrorType error)
+        {
+            if (!int.TryParse(p, out int result))
+            {
+                if (!state.ContainsVariable(p))
+                {
+                    error = ErrorType.InvalidAssignment;
+                    return EmptyOutput;
+                }
+
+                error = ErrorType.None;
+                return new string[]
+                {
+                    $"@{state.VariableMemoryAddress(p)}",
+                    "D=M"
+                };
             }
 
             if (result > 32767 || result < -32768)
@@ -116,31 +206,25 @@ namespace Assembler
             }
 
             List<string> output = new List<string>();
-            string memoryAddress = $"@{state.VariableMemoryAddress(elements[0])}";
 
             if (result == -32768)
             {
                 output.Add($"@{32767}");
                 output.Add("D=A");
-                output.Add(memoryAddress);
-                output.Add("M=-D");
-                output.Add("M=M-1");
+                output.Add("D=-D");
+                output.Add("D=D-1");
             }
 
             else if (result < 0)
             {
                 output.Add($"@{-result}");
-                output.Add("D=A");
-                output.Add(memoryAddress);
-                output.Add("M=-D");
+                output.Add("D=-A");
             }
 
             else
             {
                 output.Add($"@{result}");
                 output.Add("D=A");
-                output.Add(memoryAddress);
-                output.Add("M=D");
             }
 
             error = ErrorType.None;
