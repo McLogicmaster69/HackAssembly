@@ -29,5 +29,18 @@ namespace Assembler
             }
             outputTxt.Text = combined;
         }
+
+        private void ABCompileBtn_Click(object sender, EventArgs e)
+        {
+            string[] input = inputTxt.Text.Split('\n');
+            string[] output = ABCompiler.Compile(input);
+            string combined = "";
+            foreach (string s in output)
+            {
+                combined += s;
+                combined += "\r\n";
+            }
+            outputTxt.Text = combined;
+        }
     }
 }

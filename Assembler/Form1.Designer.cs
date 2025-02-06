@@ -32,6 +32,7 @@ namespace Assembler
             this.inputTxt = new System.Windows.Forms.TextBox();
             this.outputTxt = new System.Windows.Forms.TextBox();
             this.assembleBtn = new System.Windows.Forms.Button();
+            this.ABCompileBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // inputTxt
@@ -39,7 +40,7 @@ namespace Assembler
             this.inputTxt.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.inputTxt.Location = new System.Drawing.Point(8, 8);
-            this.inputTxt.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.inputTxt.Margin = new System.Windows.Forms.Padding(2);
             this.inputTxt.Multiline = true;
             this.inputTxt.Name = "inputTxt";
             this.inputTxt.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
@@ -51,7 +52,7 @@ namespace Assembler
             this.outputTxt.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.outputTxt.Location = new System.Drawing.Point(315, 8);
-            this.outputTxt.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.outputTxt.Margin = new System.Windows.Forms.Padding(2);
             this.outputTxt.Multiline = true;
             this.outputTxt.Name = "outputTxt";
             this.outputTxt.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
@@ -62,7 +63,7 @@ namespace Assembler
             // 
             this.assembleBtn.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.assembleBtn.Location = new System.Drawing.Point(223, 8);
-            this.assembleBtn.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.assembleBtn.Margin = new System.Windows.Forms.Padding(2);
             this.assembleBtn.Name = "assembleBtn";
             this.assembleBtn.Size = new System.Drawing.Size(88, 22);
             this.assembleBtn.TabIndex = 2;
@@ -70,15 +71,28 @@ namespace Assembler
             this.assembleBtn.UseVisualStyleBackColor = true;
             this.assembleBtn.Click += new System.EventHandler(this.assembleBtn_Click);
             // 
+            // ABCompileBtn
+            // 
+            this.ABCompileBtn.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.ABCompileBtn.Location = new System.Drawing.Point(223, 34);
+            this.ABCompileBtn.Margin = new System.Windows.Forms.Padding(2);
+            this.ABCompileBtn.Name = "ABCompileBtn";
+            this.ABCompileBtn.Size = new System.Drawing.Size(88, 22);
+            this.ABCompileBtn.TabIndex = 3;
+            this.ABCompileBtn.Text = "AB Compile";
+            this.ABCompileBtn.UseVisualStyleBackColor = true;
+            this.ABCompileBtn.Click += new System.EventHandler(this.ABCompileBtn_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(533, 292);
+            this.Controls.Add(this.ABCompileBtn);
             this.Controls.Add(this.assembleBtn);
             this.Controls.Add(this.outputTxt);
             this.Controls.Add(this.inputTxt);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
@@ -91,6 +105,7 @@ namespace Assembler
         private System.Windows.Forms.TextBox inputTxt;
         private System.Windows.Forms.TextBox outputTxt;
         private System.Windows.Forms.Button assembleBtn;
+        private System.Windows.Forms.Button ABCompileBtn;
     }
 }
 

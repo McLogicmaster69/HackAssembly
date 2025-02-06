@@ -5,13 +5,14 @@ namespace Assembler
 {
     public static class MainAssembler
     {
+        private static bool _initialised = false;
         private static Dictionary<string, string> _comp;
         private static Dictionary<string, string> _dest;
         private static Dictionary<string, string> _jump;
-        private static bool _initialised = false;
 
         private static void Initialise()
         {
+            if (_initialised) return;
             _initialised = true;
             InitComp();
             InitDest();
