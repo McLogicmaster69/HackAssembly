@@ -183,6 +183,21 @@ namespace Assembler
 
         private static string[] EvaluateExpression(string p, ABCompileState state, out ErrorType error)
         {
+            error = ErrorType.None;
+            List<string> output = new List<string>();
+
+            if (p == "true")
+            {
+                output.Add("D=-1");
+                return output.ToArray();
+            }
+
+            if (p == "false")
+            {
+                output.Add("D=0");
+                return output.ToArray();
+            }
+
             if (!int.TryParse(p, out int result))
             {
                 if (!state.ContainsVariable(p))
@@ -204,8 +219,6 @@ namespace Assembler
                 error = ErrorType.InvalidAssignment;
                 return EmptyOutput;
             }
-
-            List<string> output = new List<string>();
 
             if (result == -32768)
             {
@@ -233,8 +246,6 @@ namespace Assembler
 
         private static string[] Declare(string[] elements, ABCompileState state, out ErrorType error)
         {
-            error = ErrorType.None;
-
             if (elements.Length < 2)
             {
                 error = ErrorType.MissingArguements;
