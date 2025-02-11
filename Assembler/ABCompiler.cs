@@ -10,8 +10,8 @@ namespace Assembler
     {
         private static bool _initialised = false;
         private static Dictionary<string, KeywordCommand> _keywords;
-        private static int _ifCounter = 0;
-        private static int _ifLabelCounter = 0;
+        private static int _jumpCounter = 0;
+        private static Stack<(int, StatementType)> _jumpToEnd;
 
         private static string[] EmptyOutput => new string[0];
 
@@ -25,14 +25,24 @@ namespace Assembler
         private static void InitKeywords()
         {
             _keywords = new Dictionary<string, KeywordCommand>();
-            _keywords.Add("dec", Declare);
+            _keywords.Add("dec", DeclareStatement);
+            _keywords.Add("if", IfStatement);
+            _keywords.Add("end", EndStatement);
+            _keywords.Add("ins", InsertStatement);
+            _keywords.Add("rem", RemoveStatement);
+            _keywords.Add("while", WhileStatement);
+        }
+
+        private static void InitialiseCompile()
+        {
+            if (!_initialised) Initialise();
+            _jumpCounter = 0;
+            _jumpToEnd = new Stack<(int, StatementType)>();
         }
 
         public static string[] Compile(string[] input)
         {
-            if (!_initialised) Initialise();
-            _ifCounter = 0;
-            _ifLabelCounter = 0;
+            InitialiseCompile();
             List<string> output = new List<string>();
             ABCompileState state = new ABCompileState();
             int lineNumber = -1;
@@ -64,6 +74,8 @@ namespace Assembler
                 return GenerateError(lineNumber, ErrorType.UnknownCommand);
             }
 
+            if (_jumpToEnd.Count > 0) return GenerateError(lineNumber, ErrorType.MissingEndStatement);
+
             return output.ToArray();
         }
 
@@ -79,8 +91,6 @@ namespace Assembler
 
         private static string[] VariableCommand(string[] elements, ABCompileState state, out ErrorType error)
         {
-            error = ErrorType.None;
-
             if (elements.Length == 1)
             {
                 error = ErrorType.MissingArguements;
@@ -240,7 +250,7 @@ namespace Assembler
             return output.ToArray();
         }
 
-        private static string[] EvaluateBooleanExpression(string p, string op, ABCompileState state, out ErrorType error)
+        private static string[] EvaluateBooleanExpression(string p, string op, string jumpLabel, ABCompileState state, out ErrorType error)
         {
             List<string> output = new List<string>();
 
@@ -251,26 +261,27 @@ namespace Assembler
                 return EmptyOutput;
             }
             output.AddRange(pLines);
+            output.Add($"@{jumpLabel}");
 
             switch (op)
             {
                 case "==":
-                    output[output.Count - 1] = $"{output[output.Count - 1]};JEZ";
+                    output.Add("D;JNE");
                     break;
                 case ">":
-                    output[output.Count - 1] = $"{output[output.Count - 1]};JGT";
+                    output.Add("D;JLE");
                     break;
                 case ">=":
-                    output[output.Count - 1] = $"{output[output.Count - 1]};JGE";
+                    output.Add("D;JLT");
                     break;
                 case "<":
-                    output[output.Count - 1] = $"{output[output.Count - 1]};JLT";
+                    output.Add("D;JGE");
                     break;
                 case "<=":
-                    output[output.Count - 1] = $"{output[output.Count - 1]};JLE";
+                    output.Add("D;JGT");
                     break;
                 case "!=":
-                    output[output.Count - 1] = $"{output[output.Count - 1]};JNE";
+                    output.Add("D;JEQ");
                     break;
                 default:
                     error = ErrorType.UnknownOperator;
@@ -281,7 +292,7 @@ namespace Assembler
             return output.ToArray();
         }
         
-        private static string[] Declare(string[] elements, ABCompileState state, out ErrorType error)
+        private static string[] DeclareStatement(string[] elements, ABCompileState state, out ErrorType error)
         {
             if (elements.Length < 2)
             {
@@ -295,11 +306,18 @@ namespace Assembler
                 return EmptyOutput;
             }
 
-            error = state.Declare(elements[1]);
-            return EmptyOutput;
+            error = state.Declare(elements[1], out bool requireInit);
+            if (!requireInit) return EmptyOutput;
+            string[] assignment = VariableAssignment(new string[] { elements[1], "=", "0" }, state, out ErrorType assignmentError);
+            if (assignmentError != ErrorType.None)
+            {
+                error = assignmentError;
+                return EmptyOutput;
+            }
+            return assignment;
         }
 
-        private static string[] StartIf(string[] elements, ABCompileState state, out ErrorType error)
+        private static string[] IfStatement(string[] elements, ABCompileState state, out ErrorType error)
         {
             if (elements.Length < 3)
             {
@@ -313,8 +331,106 @@ namespace Assembler
                 return EmptyOutput;
             }
 
+            string[] ifLines = EvaluateBooleanExpression(elements[1], elements[2], $"jump{_jumpCounter}", state, out ErrorType booleanError);
+            _jumpToEnd.Push((_jumpCounter, StatementType.If));
+            _jumpCounter++;
+            if (booleanError != ErrorType.None)
+            {
+                error = booleanError;
+                return EmptyOutput;
+            }
+
             error = ErrorType.None;
+            return ifLines;
+        }
+
+        private static string[] EndStatement(string[] elements, ABCompileState state, out ErrorType error)
+        {
+            if (elements.Length > 1)
+            {
+                error = ErrorType.TooManyArguements;
+                return EmptyOutput;
+            }
+
+            if (_jumpToEnd.Count == 0)
+            {
+                error = ErrorType.NoCorrespondingStatement;
+                return EmptyOutput;
+            }
+
+            (int, StatementType) jump = _jumpToEnd.Pop();
+            switch (jump.Item2)
+            {
+                case StatementType.If:
+                    error = ErrorType.None;
+                    return new string[1] { $"(jump{jump.Item1})" };
+                case StatementType.While:
+                    error = ErrorType.None;
+                    return new string[3] { $"@while{jump.Item1}", "0;JMP", $"(jump{jump.Item1})" };
+            }
+
+            error = ErrorType.UnknownCommand;
             return EmptyOutput;
+        }
+
+        private static string[] InsertStatement(string[] elements, ABCompileState state, out ErrorType error)
+        {
+            error = ErrorType.None;
+            string output = "";
+            for (int i = 1; i < elements.Length; i++)
+            {
+                output += elements[i];
+            }
+            return new string[1] { output };
+        }
+
+        private static string[] RemoveStatement(string[] elements, ABCompileState state, out ErrorType error)
+        {
+            if (elements.Length < 2)
+            {
+                error = ErrorType.MissingArguements;
+                return EmptyOutput;
+            }
+
+            if (elements.Length > 2)
+            {
+                error = ErrorType.TooManyArguements;
+                return EmptyOutput;
+            }
+
+            error = state.Remove(elements[1]);
+            return EmptyOutput;
+        }
+
+        private static string[] WhileStatement(string[] elements, ABCompileState state, out ErrorType error)
+        {
+            if (elements.Length < 3)
+            {
+                error = ErrorType.MissingArguements;
+                return EmptyOutput;
+            }
+
+            if (elements.Length > 3)
+            {
+                error = ErrorType.TooManyArguements;
+                return EmptyOutput;
+            }
+
+            List<string> output = new List<string>();
+            output.Add($"(while{_jumpCounter})");
+            string[] whileLines = EvaluateBooleanExpression(elements[1], elements[2], $"jump{_jumpCounter}", state, out ErrorType booleanError);
+            _jumpToEnd.Push((_jumpCounter, StatementType.While));
+            _jumpCounter++;
+
+            if (booleanError != ErrorType.None)
+            {
+                error = booleanError;
+                return EmptyOutput;
+            }
+
+            output.AddRange(whileLines);
+            error = ErrorType.None;
+            return output.ToArray();
         }
 
         private static string[] GenerateError(int line, ErrorType type) => new string[] { $"ERROR ON LINE {line} OF TYPE {type}" };

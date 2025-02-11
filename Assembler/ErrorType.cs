@@ -9,6 +9,9 @@
         InvalidVariableIdentifier,
         InvalidAssignment,
         UnknownOperator,
-        UnknownCommand
+        UnknownCommand,
+        NoCorrespondingStatement,
+        MissingEndStatement,
+        VariableDoesNotExist
     }
 }
