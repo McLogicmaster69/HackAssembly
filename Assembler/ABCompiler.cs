@@ -10,7 +10,8 @@ namespace Assembler
     {
         private static bool _initialised = false;
         private static Dictionary<string, KeywordCommand> _keywords;
-        private static List<string> _operators;
+        private static int _ifCounter = 0;
+        private static int _ifLabelCounter = 0;
 
         private static string[] EmptyOutput => new string[0];
 
@@ -27,16 +28,11 @@ namespace Assembler
             _keywords.Add("dec", Declare);
         }
 
-        private static void InitOperators()
-        {
-            _operators = new List<string>();
-            _operators.Add("+");
-            _operators.Add("-");
-        }
-
         public static string[] Compile(string[] input)
         {
             if (!_initialised) Initialise();
+            _ifCounter = 0;
+            _ifLabelCounter = 0;
             List<string> output = new List<string>();
             ABCompileState state = new ABCompileState();
             int lineNumber = -1;
@@ -244,6 +240,47 @@ namespace Assembler
             return output.ToArray();
         }
 
+        private static string[] EvaluateBooleanExpression(string p, string op, ABCompileState state, out ErrorType error)
+        {
+            List<string> output = new List<string>();
+
+            string[] pLines = EvaluateExpression(p, state, out ErrorType pError);
+            if (pError != ErrorType.None)
+            {
+                error = pError;
+                return EmptyOutput;
+            }
+            output.AddRange(pLines);
+
+            switch (op)
+            {
+                case "==":
+                    output[output.Count - 1] = $"{output[output.Count - 1]};JEZ";
+                    break;
+                case ">":
+                    output[output.Count - 1] = $"{output[output.Count - 1]};JGT";
+                    break;
+                case ">=":
+                    output[output.Count - 1] = $"{output[output.Count - 1]};JGE";
+                    break;
+                case "<":
+                    output[output.Count - 1] = $"{output[output.Count - 1]};JLT";
+                    break;
+                case "<=":
+                    output[output.Count - 1] = $"{output[output.Count - 1]};JLE";
+                    break;
+                case "!=":
+                    output[output.Count - 1] = $"{output[output.Count - 1]};JNE";
+                    break;
+                default:
+                    error = ErrorType.UnknownOperator;
+                    return EmptyOutput;
+            }
+
+            error = ErrorType.None;
+            return output.ToArray();
+        }
+        
         private static string[] Declare(string[] elements, ABCompileState state, out ErrorType error)
         {
             if (elements.Length < 2)
@@ -259,6 +296,24 @@ namespace Assembler
             }
 
             error = state.Declare(elements[1]);
+            return EmptyOutput;
+        }
+
+        private static string[] StartIf(string[] elements, ABCompileState state, out ErrorType error)
+        {
+            if (elements.Length < 3)
+            {
+                error = ErrorType.MissingArguements;
+                return EmptyOutput;
+            }
+
+            if (elements.Length > 3)
+            {
+                error = ErrorType.TooManyArguements;
+                return EmptyOutput;
+            }
+
+            error = ErrorType.None;
             return EmptyOutput;
         }
 
