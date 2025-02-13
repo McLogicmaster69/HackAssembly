@@ -23,6 +23,7 @@ namespace Assembler.VM
         {
             _keywords = new Dictionary<string, ABKeywordCommand>();
             _keywords.Add("push", PushCommand);
+            _keywords.Add("pop", PopCommand);
         }
 
         public static string[] Compile(string[] input)
@@ -30,6 +31,10 @@ namespace Assembler.VM
             if (!_initialised) Initialise();
             List<string> output = new List<string>();
             int lineNumber = -1;
+            output.Add("@256");
+            output.Add("D=A");
+            output.Add("@SP");
+            output.Add("M=D");
 
             foreach (string command in input)
             {
@@ -131,6 +136,40 @@ namespace Assembler.VM
 
             error = VMErrorType.None;
             return output.ToArray();
+        }
+
+        private static string[] PopCommand(string[] elements, out VMErrorType error)
+        {
+            if (elements.Length < 3)
+            {
+                error = VMErrorType.MissingArguements;
+                return EmptyOutput;
+            }
+
+            if (elements.Length > 3)
+            {
+                error = VMErrorType.TooManyArguements;
+                return EmptyOutput;
+            }
+
+            List<string> output = new List<string>();
+
+            switch (elements[1])
+            {
+                case "local":
+                    break;
+                default:
+                    error = VMErrorType.InvalidScope;
+                    return EmptyOutput;
+            }
+
+            error = VMErrorType.None;
+            return output.ToArray();
+        }
+
+        private static string[] PopLocalCommand(string[] elements, out VMErrorType error)
+        {
+
         }
 
         private static string[] RemoveBlankSpace(string[] input)
