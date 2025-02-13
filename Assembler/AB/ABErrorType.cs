@@ -1,6 +1,6 @@
-﻿namespace Assembler
+﻿namespace Assembler.AB
 {
-    public enum ErrorType
+    public enum ABErrorType
     {
         None,
         MissingArguements,

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assembler
+namespace Assembler.AB
 {
     public class ABCompileState
     {
@@ -19,12 +19,12 @@ namespace Assembler
             _availableMemory = new List<int>();
         }
 
-        public ErrorType Declare(string name, out bool requireInit)
+        public ABErrorType Declare(string name, out bool requireInit)
         {
             requireInit = false;
-            if (_variables.ContainsKey(name)) return ErrorType.AlreadyExistingVariable;
-            if (string.IsNullOrEmpty(name)) return ErrorType.InvalidVariableIdentifier;
-            if (int.TryParse(name, out int _)) return ErrorType.InvalidVariableIdentifier;
+            if (_variables.ContainsKey(name)) return ABErrorType.AlreadyExistingVariable;
+            if (string.IsNullOrEmpty(name)) return ABErrorType.InvalidVariableIdentifier;
+            if (int.TryParse(name, out int _)) return ABErrorType.InvalidVariableIdentifier;
             if (_availableMemory.Count > 0)
             {
                 requireInit = true;
@@ -35,16 +35,16 @@ namespace Assembler
             {
                 _variables.Add(name, STARTING_VARIABLE_MEMORY_LOCATION + _variables.Count);
             }
-            return ErrorType.None;
+            return ABErrorType.None;
         }
 
-        public ErrorType Remove(string name)
+        public ABErrorType Remove(string name)
         {
-            if (!_variables.ContainsKey(name)) return ErrorType.VariableDoesNotExist;
+            if (!_variables.ContainsKey(name)) return ABErrorType.VariableDoesNotExist;
             int memoryLocation = _variables[name];
             _variables.Remove(name);
             _availableMemory.Add(memoryLocation);
-            return ErrorType.None;
+            return ABErrorType.None;
         }
 
         public bool ContainsVariable(string name) => _variables.ContainsKey(name);

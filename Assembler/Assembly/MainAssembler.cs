@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Assembler
+namespace Assembler.Assembler
 {
     public static class MainAssembler
     {

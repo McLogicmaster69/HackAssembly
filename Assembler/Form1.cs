@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Assembler.AB;
+using Assembler.Assembler;
+using Assembler.VM;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -34,6 +37,19 @@ namespace Assembler
         {
             string[] input = inputTxt.Text.Split('\n');
             string[] output = ABCompiler.Compile(input);
+            string combined = "";
+            foreach (string s in output)
+            {
+                combined += s;
+                combined += "\r\n";
+            }
+            outputTxt.Text = combined;
+        }
+
+        private void VMCompileBtn_Click(object sender, EventArgs e)
+        {
+            string[] input = inputTxt.Text.Split('\n');
+            string[] output = VirtualMachineCompiler.Compile(input);
             string combined = "";
             foreach (string s in output)
             {
