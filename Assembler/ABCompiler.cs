@@ -433,6 +433,60 @@ namespace Assembler
             return output.ToArray();
         }
 
+        private static string[] ScreenStatement(string[] elements, ABCompileState state, out ErrorType error)
+        {
+            // 32 by 256
+
+            if (elements.Length < 4)
+            {
+                error = ErrorType.MissingArguements;
+                return EmptyOutput;
+            }
+
+            if (elements.Length > 4)
+            {
+                error = ErrorType.TooManyArguements;
+                return EmptyOutput;
+            }
+
+            if (!int.TryParse(elements[1], out int x))
+            {
+                error = ErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            if (!int.TryParse(elements[2], out int y))
+            {
+                error = ErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            if (x < 0 || x > 31)
+            {
+                error = ErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            if (y < 0 || y > 255)
+            {
+                error = ErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            string[] valueLines = EvaluateExpression(elements[3], state, out ErrorType valueError);
+            if (valueError != ErrorType.None)
+            {
+                error = valueError;
+                return EmptyOutput;
+            }
+
+            List<string> output = new List<string>(valueLines);
+            output.Add($"@{16384 + x + 32 * y}");
+            output.Add("M=D");
+            error = ErrorType.None;
+            return output.ToArray();
+        }
+
         private static string[] GenerateError(int line, ErrorType type) => new string[] { $"ERROR ON LINE {line} OF TYPE {type}" };
     }
 
