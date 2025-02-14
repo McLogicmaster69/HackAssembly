@@ -120,7 +120,16 @@ namespace Assembler.AB
 
             string[] evaluation;
 
-            if (elements.Length == 3)
+            if (elements[2] == $"!{elements[0]}")
+            {
+                error = ABErrorType.None;
+                return new string[]
+                {
+                    $"@{state.VariableMemoryAddress(elements[0])}",
+                    "M=!M"
+                };
+            }
+            else if (elements.Length == 3)
             {
                 evaluation = EvaluateExpression(elements[2], state, out ABErrorType evalError);
                 if (evalError != ABErrorType.None)
@@ -179,6 +188,14 @@ namespace Assembler.AB
                     output.Add("@R0");
                     output.Add("D=M-D");
                     break;
+                case "&":
+                    output.Add("@R0");
+                    output.Add("D=M&D");
+                    break;
+                case "|":
+                    output.Add("@R0");
+                    output.Add("D=M|D");
+                    break;
                 default:
                     error = ABErrorType.UnknownOperator;
                     return EmptyOutput;
@@ -205,20 +222,48 @@ namespace Assembler.AB
                 return output.ToArray();
             }
 
-            if (!int.TryParse(p, out int result))
+            if (p == ABCompileState.KEYBOARD_NAME)
             {
-                if (!state.ContainsVariable(p))
-                {
-                    error = ABErrorType.InvalidAssignment;
-                    return EmptyOutput;
-                }
-
                 error = ABErrorType.None;
                 return new string[]
                 {
-                    $"@{state.VariableMemoryAddress(p)}",
+                    "@24576",
                     "D=M"
                 };
+            }
+
+            if (!int.TryParse(p, out int result))
+            {
+                if(p[0] == '!')
+                {
+                    if (!state.ContainsVariable(p.Substring(1)))
+                    {
+                        error = ABErrorType.InvalidAssignment;
+                        return EmptyOutput;
+                    }
+
+                    error = ABErrorType.None;
+                    return new string[]
+                    {
+                    $"@{state.VariableMemoryAddress(p.Substring(1))}",
+                    "D=!M"
+                    };
+                }
+                else
+                {
+                    if (!state.ContainsVariable(p))
+                    {
+                        error = ABErrorType.InvalidAssignment;
+                        return EmptyOutput;
+                    }
+
+                    error = ABErrorType.None;
+                    return new string[]
+                    {
+                    $"@{state.VariableMemoryAddress(p)}",
+                    "D=M"
+                    };
+                }
             }
 
             if (result > 32767 || result < -32768)

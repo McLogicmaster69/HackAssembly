@@ -169,7 +169,8 @@ namespace Assembler.VM
 
         private static string[] PopLocalCommand(string[] elements, out VMErrorType error)
         {
-
+            error = VMErrorType.None;
+            return EmptyOutput;
         }
 
         private static string[] RemoveBlankSpace(string[] input)

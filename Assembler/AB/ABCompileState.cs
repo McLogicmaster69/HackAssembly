@@ -11,6 +11,8 @@ namespace Assembler.AB
         private Dictionary<string, int> _variables;
         private List<int> _availableMemory;
 
+        public const string KEYBOARD_NAME = "inp";
+
         private const int STARTING_VARIABLE_MEMORY_LOCATION = 16;
 
         public ABCompileState()
@@ -22,6 +24,7 @@ namespace Assembler.AB
         public ABErrorType Declare(string name, out bool requireInit)
         {
             requireInit = false;
+            if (name == KEYBOARD_NAME) return ABErrorType.InvalidVariableIdentifier;
             if (_variables.ContainsKey(name)) return ABErrorType.AlreadyExistingVariable;
             if (string.IsNullOrEmpty(name)) return ABErrorType.InvalidVariableIdentifier;
             if (int.TryParse(name, out int _)) return ABErrorType.InvalidVariableIdentifier;
