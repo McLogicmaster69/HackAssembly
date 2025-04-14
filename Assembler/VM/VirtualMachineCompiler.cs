@@ -73,20 +73,25 @@ namespace Assembler.VM
             }
 
             List<string> output = new List<string>();
+            VMErrorType pError;
 
             switch (elements[1])
             {
                 case "constant":
-                    output.AddRange(PushConstantCommand(elements, out VMErrorType pError));
-                    if (pError != VMErrorType.None)
-                    {
-                        error = pError;
-                        return EmptyOutput;
-                    }
+                    output.AddRange(PushConstantCommand(elements, out pError));
+                    break;
+                case "local":
+                    output.AddRange(PushLocalCommand(elements, out pError));
                     break;
                 default:
                     error = VMErrorType.InvalidScope;
                     return EmptyOutput;
+            }
+
+            if (pError != VMErrorType.None)
+            {
+                error = pError;
+                return EmptyOutput;
             }
 
             output.Add("@SP");
@@ -138,6 +143,35 @@ namespace Assembler.VM
             return output.ToArray();
         }
 
+        private static string[] PushLocalCommand(string[] elements, out VMErrorType error)
+        {
+            List<string> output = new List<string>();
+
+            if (!int.TryParse(elements[2], out int result))
+            {
+                error = VMErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            if (result > 32767 || result < 0)
+            {
+                error = VMErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            output.Add("@LCL");
+            if (result > 0)
+            {
+                output.Add("D=M");
+                output.Add($"@{result}");
+                output.Add("A=D+A");
+            }
+            output.Add("D=M");
+
+            error = VMErrorType.None;
+            return output.ToArray();
+        }
+
         private static string[] PopCommand(string[] elements, out VMErrorType error)
         {
             if (elements.Length < 3)
@@ -153,14 +187,25 @@ namespace Assembler.VM
             }
 
             List<string> output = new List<string>();
+            VMErrorType pError;
+
+            output.Add("@SP");
+            output.Add("M=M-1");
 
             switch (elements[1])
             {
                 case "local":
+                    PopLocalCommand(elements, out pError);
                     break;
                 default:
                     error = VMErrorType.InvalidScope;
                     return EmptyOutput;
+            }
+
+            if (pError != VMErrorType.None)
+            {
+                error = pError;
+                return EmptyOutput;
             }
 
             error = VMErrorType.None;
@@ -169,8 +214,37 @@ namespace Assembler.VM
 
         private static string[] PopLocalCommand(string[] elements, out VMErrorType error)
         {
+            List<string> output = new List<string>();
+
+            if (!int.TryParse(elements[2], out int result))
+            {
+                error = VMErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            if (result > 32767 || result < 0)
+            {
+                error = VMErrorType.InvalidAssignment;
+                return EmptyOutput;
+            }
+
+            output.Add("@LCL");
+            if (result > 0)
+            {
+                output.Add("D=M");
+                output.Add($"@{result}");
+                output.Add("D=D+A");
+            }
+            output.Add("@R13");
+            output.Add("M=D");
+            output.Add("@SP");
+            output.Add("D=M");
+            output.Add("@R13");
+            output.Add("A=M");
+            output.Add("M=D");
+
             error = VMErrorType.None;
-            return EmptyOutput;
+            return output.ToArray();
         }
 
         private static string[] RemoveBlankSpace(string[] input)
